@@ -48,7 +48,7 @@ namespace GenerateTestInput
             var container1json = JsonConvert.SerializeObject(container1);
             var container2json = JsonConvert.SerializeObject(container2);
 
-            var url = "http://shippingcontainerspoilagewebapi.azurewebsites.net/trips/containers?tripIdString=1";
+            var url = "http://shippingcontainerspoilagewebapi.azurewebsites.net/trips/containers?tripId=1";
             var result1 = httpClient.PostAsync(url, new StringContent(container1json, Encoding.UTF8, "application/json")).Result;
             var result2 = httpClient.PostAsync(url, new StringContent(container2json, Encoding.UTF8, "application/json")).Result;
         }

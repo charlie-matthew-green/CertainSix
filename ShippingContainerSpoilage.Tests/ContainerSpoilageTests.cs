@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using Rhino.Mocks;
+using ShippingContainerSpoilage.WebApi;
 using ShippingContainerSpoilage.WebApi.Controllers;
 using ShippingContainerSpoilage.WebApi.Models;
 
@@ -31,7 +32,7 @@ namespace ShippingContainerSpoilage.Tests
             // Act
             var validation = containerSpoilage.ValidateTripCreationDetails(tripCreationDetails);
             Assert.AreEqual(isValid, validation.isValid);
-            Assert.AreEqual(isValid ? 0 : 1, validation.errorMessages.Count());
+            Assert.AreEqual(isValid, string.IsNullOrEmpty(validation.errorMessage));
         }        
         
         [TestCase("NZ to GB", true)]
@@ -51,7 +52,7 @@ namespace ShippingContainerSpoilage.Tests
             
             // Assert
             Assert.AreEqual(isValid, validation.isValid);
-            Assert.AreEqual(isValid ? 0 : 1, validation.errorMessages.Count());
+            Assert.AreEqual(isValid, string.IsNullOrEmpty(validation.errorMessage));
         }
 
         [TestCase(1000, true)]
@@ -71,7 +72,7 @@ namespace ShippingContainerSpoilage.Tests
 
             // Assert
             Assert.AreEqual(isValid, validation.isValid);
-            Assert.AreEqual(isValid ? 0 : 1, validation.errorMessages.Count());
+            Assert.AreEqual(isValid, string.IsNullOrEmpty(validation.errorMessage));
         }
 
         [TestCase("1234", true)]
@@ -91,7 +92,7 @@ namespace ShippingContainerSpoilage.Tests
 
             // Assert
             Assert.AreEqual(isValid, validation.isValid);
-            Assert.AreEqual(isValid ? 0 : 1, validation.errorMessages.Count());
+            Assert.AreEqual(isValid, string.IsNullOrEmpty(validation.errorMessage));
         }
 
         [Test]
@@ -133,13 +134,14 @@ namespace ShippingContainerSpoilage.Tests
             var containerSpoilage = new ContainerSpoilage(dalfacade);
 
             // Act
-            var trip = containerSpoilage.GetTrip(tripId);
+            var trip = containerSpoilage.GetTrip(tripId.ToString());
 
             // Assert
             Assert.AreEqual(tripId, trip.Id);
             Assert.AreEqual(2, trip.ContainerCount);
-            Assert.AreEqual(29.6m, trip.MaxTemperature);
-            Assert.AreEqual(GetMeanTemperature(container1, container2), trip.MeanTemperature);
+            Assert.AreEqual(29.60m, trip.MaxTemperature);
+            var roundedMeanTemperature = decimal.Round(GetMeanTemperature(container1, container2), 2);
+            Assert.AreEqual(roundedMeanTemperature, trip.MeanTemperature);
             Assert.AreEqual(1, trip.SpoiledContainerCount);
             Assert.AreEqual(1039, trip.SpoiledProductCount);
         }

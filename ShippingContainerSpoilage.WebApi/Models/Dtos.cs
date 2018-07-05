@@ -20,7 +20,7 @@ namespace ShippingContainerSpoilage.WebApi.Models
 
         public string GetETag()
         {
-            return $"W/\"{ContainerCount}-{MaxTemperature}-{MeanTemperature}-{SpoiledContainerCount}-{SpoiledProductCount}\"";
+            return $"\"{ContainerCount}-{MaxTemperature}-{MeanTemperature}-{SpoiledContainerCount}-{SpoiledProductCount}\"";
         }
     }
 

@@ -1,11 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ShippingContainerSpoilage.WebApi.Controllers;
 using ShippingContainerSpoilage.WebApi.Models;
 
-namespace ShippingContainerSpoilage.WebApi.Controllers
+namespace ShippingContainerSpoilage.WebApi
 {
-    public class ContainerSpoilage 
+    public interface IContainerSpoilage
+    {
+        (bool isValid, string errorMessage) ValidateTripCreationDetails(TripCreationDetails tripCreationDetails);
+        (bool isValid, string errorMessage) ValidateContainerCreationDetails(ContainerCreationDetails containerCreationDetails);
+        long CreateTrip(TripCreationDetails tripCreationDetails);
+        bool TripExists(string tripIdString);
+        void CreateContainer(string tripId, ContainerCreationDetails containerCreationDetails);
+        Trip GetTrip(string tripId);
+    }
+
+    public class ContainerSpoilage : IContainerSpoilage
     {
         private readonly IDalFacade dalFacade;
 
@@ -14,44 +25,54 @@ namespace ShippingContainerSpoilage.WebApi.Controllers
             this.dalFacade = dalFacade;
         }
 
-        public (bool isValid, IEnumerable<string> errorMessages) ValidateTripCreationDetails(TripCreationDetails tripCreationDetails)
+        public (bool isValid, string errorMessage) ValidateTripCreationDetails(TripCreationDetails tripCreationDetails)
         {
-            var responses = new List<string>();
+            var errorMessage = "";
             var isValid = true;
+
+            if (tripCreationDetails == null)
+            {
+                return (false, "Invalid trip creation details. ");
+            }
 
             if (tripCreationDetails.SpoilDuration < 0)
             {
-                responses.Add("Negative spoil duration is invalid");
+                errorMessage += "Negative spoil duration is invalid. ";
                 isValid = false;
             }
 
             if (string.IsNullOrEmpty(tripCreationDetails.Name))
             {
-                responses.Add("Trip name must be set");
+                errorMessage += "Trip name must be set. ";
                 isValid = false;
             }
 
-            return (isValid, responses);
+            return (isValid, errorMessage);
         }
 
-        public (bool isValid, IEnumerable<string> errorMessages) ValidateContainerCreationDetails(ContainerCreationDetails containerCreationDetails)
+        public (bool isValid, string errorMessage) ValidateContainerCreationDetails(ContainerCreationDetails containerCreationDetails)
         {
-            var responses = new List<string>();
+            var errorMessage = "";
             var isValid = true;
+
+            if (containerCreationDetails == null)
+            {
+                return (false, "Invalid container creation details");
+            }
 
             if (string.IsNullOrEmpty(containerCreationDetails.Id))
             {
-                responses.Add("Container id must be set");
+                errorMessage += "Container id must be set. ";
                 isValid = false;
             }
 
             if (containerCreationDetails.ProductCount < 0)
             {
-                responses.Add("Negative product count is invalid");
+                errorMessage += "Negative product count is invalid. ";
                 isValid = false;
             }
 
-            return (isValid, responses);
+            return (isValid, errorMessage);
         }
 
         public long CreateTrip(TripCreationDetails tripCreationDetails)
@@ -59,18 +80,24 @@ namespace ShippingContainerSpoilage.WebApi.Controllers
             return dalFacade.AddTrip(tripCreationDetails);
         }
 
-        public bool TripExists(long tripId)
+        public bool TripExists(string tripIdString)
         {
+            if (!long.TryParse(tripIdString, out var tripId))
+            {
+                return false;
+            }
             return dalFacade.TryGetTripDetails(tripId, out _);
         }
 
-        public void CreateContainer(long tripId, ContainerCreationDetails containerCreationDetails)
+        public void CreateContainer(string tripIdString, ContainerCreationDetails containerCreationDetails)
         {
+            var tripId = long.Parse(tripIdString);
             dalFacade.AddContainer(tripId, containerCreationDetails);
         }
 
-        public Trip GetTrip(long tripId)
+        public Trip GetTrip(string tripIdString)
         {
+            var tripId = long.Parse(tripIdString);
             var tripFound = dalFacade.TryGetTripDetails(tripId, out var trip);
             var containers = dalFacade.GetContainers(tripId).ToArray();
             if (!containers.Any())
@@ -78,13 +105,13 @@ namespace ShippingContainerSpoilage.WebApi.Controllers
                 return trip;
             }
             trip.ContainerCount = containers.Length;
-            trip.MaxTemperature = containers.Max(x => x.Measurements.Max(y => y.Value));
+            trip.MaxTemperature = decimal.Round(containers.Max(x => x.Measurements.Max(y => y.Value)), 2);
             var measurements = new List<TemperatureRecord>();
             foreach (var measurementList in containers.Select(x => x.Measurements))
             {
                 measurements.AddRange(measurementList);
             }
-            trip.MeanTemperature = measurements.Average(x => x.Value);
+            trip.MeanTemperature = decimal.Round(measurements.Average(x => x.Value), 2);
             var spoilageStats = GetSpoilageStatistics(containers, measurements, trip);
             trip.SpoiledContainerCount = spoilageStats.spoiledContainers;
             trip.SpoiledProductCount = spoilageStats.spoiledProducts;

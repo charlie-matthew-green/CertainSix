@@ -1,18 +1,11 @@
-﻿using Swashbuckle.Application;
-using System;
+﻿using System;
 using System.Web.Http;
+using Swashbuckle.Application;
 
-namespace ShippingContainerSpoilage.WebApi.App_Start
+namespace ShippingContainerSpoilage.WebApi
 {
-    /// <summary>
-    /// Represents route configuration.
-    /// </summary>
     public static class RouteConfig
     {
-        /// <summary>
-        /// Configures Web API routes.
-        /// </summary>
-        /// <param name="configuration"></param>
         public static void Configure(HttpConfiguration configuration)
         {
             if (configuration == null)

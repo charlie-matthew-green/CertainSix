@@ -15,6 +15,11 @@ namespace ShippingContainerSpoilage.WebApi.Controllers
         IEnumerable<ContainerCreationDetails> GetContainers(long tripId);
     }
 
+    /// Persistance is done via stored procedures rather than with an ORM due to time constraints and the fact
+    /// that I'm more familiar with using Ado.Net directly. With more time it would be better to use an ORM,
+    /// especially if the domain is likely to get more complicated, to reduce the amount of code manually
+    /// written and have the benefit of saving objects in transactions (then don't end up with half of the
+    /// object saved in the database if something goes wrong half way through)
     public class DalFacade : IDalFacade
     {
         private readonly string connectionString;
